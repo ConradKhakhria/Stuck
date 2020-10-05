@@ -23,15 +23,3 @@ compileMaths (SYM a) args lineNumber
   | 
   where argIndex = elemIndex a args
 
--- (+, (a, b, 1)):
--- 
--- push elements in reverse:
---    push  1 <- [rsi + 12]
---    push  b <- [rsi + 8]
---    push  a <- [rsi + 4]
---
--- prep the accumulator and count register
---    mov   rax, [rsi + 4]
---
--- and the rest:
---    
