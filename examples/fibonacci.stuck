@@ -1,0 +1,29 @@
+# This program prints the n-th fibonacci number where n is a number
+# provided by the user.
+
+
+# Function which pushes its only arguments onto the stack
+# This sort of function is used whenever you want to push a
+# transformed argument
+a b
+  > b
+
+# The main fibonacci iterator, which stores term n-1 and n-2
+# in c and d, and then counts down from e
+b c d e
+  e
+    < c
+    < d
+    > c
+    > d
+    a c+d
+    b c d e-1
+
+# Main function
+c d
+  ?
+  < d
+  > 0
+  > 1
+  b 0 0 d
+  !

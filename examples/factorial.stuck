@@ -1,0 +1,20 @@
+# This program accepts a number from stdin as input and prints its factorial
+
+# Factorial iterator, with 'b' being a decrementing integer by which the
+# accumulator 'c' is multiplied in each iteration. 'c' is used here both
+# as the accumulator and to simulate an 'else' block, as it is initialised
+# with 1 and only ever increases.
+a b c
+  b
+    a b-1 b*c
+  c
+    > c
+
+# Main function, which gets user input, pops it into argument 'c', passes
+# it to the factorial iterator 'a' and then prints it
+b c
+  ?
+  < c
+  a c 1
+  !
+
