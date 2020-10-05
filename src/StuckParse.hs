@@ -107,13 +107,16 @@ genCond line args = COND $ Maybe.fromJust $ elemIndex (head (lineContents line))
 
 genCall :: StuckLine -> [String] -> [String] -> Instruction
 genCall line args funcs
-  | not $ name `elem` funcs = error $ pLine ++ ": unknown function " ++ name
+  | not $ name `elem` funcs       = error $ pLine ++ ": unknown function " ++ name
+  | length argExprs < length args = error $ pLine ++ ": insufficient arguments " ++ suppl
+  | length argExprs > length args = error $ pLine ++ ": too many arguments "     ++ suppl
   | not argsValid = error $ pLine ++ ": function arguments contain unknown parameters"
   | otherwise     = CALL { callFuncName = name, callArguments = map parse argExprs }
   where pLine     = "Line " ++ (show . lineNumber) line
         name      = head  $ lineContents line
         argExprs  = tail  $ lineContents line
         argsValid = not   $ False `elem` [stringsInArgs args $ getStrings s "" | s <- argExprs]
+        suppl     = "supplied to function" -- only way to make the line length reasonable
 
 generateInstructions :: [StuckLine] -> [String] -> [String] -> Int -> [Instruction]
 generateInstructions [] _ _ _ = []
