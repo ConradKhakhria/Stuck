@@ -15,7 +15,7 @@ compileMaths :: ParseTree -> Integer -> [String] -> String
 compileMaths (NUM n) args lineNumber
   | "." `elem` n  = error $ pLine ++ ": floating point numbers not supported"
   | not32bits     = error $ pLine ++ ": numbers must be 32 bits"
-  | otherwise     = "push" ++ n
+  | otherwise     = "push"  ++ n
   where pLine     = "Line " ++ show lineNumber
         not32bits = abs (read n :: Integer) > 2147483647
 
