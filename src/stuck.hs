@@ -2,6 +2,7 @@ import System.Environment
 import System.IO
 import Control.Monad
 import Data.List
+import Data.Map (empty)
 
 import StuckParse
 import StuckCompile
@@ -21,7 +22,10 @@ main = do
   filename  <- getFileName args
   handle    <- openFile filename ReadMode
   contents  <- hGetContents handle
-  let fileLines = filter (\x -> lineContents x /= []) . linesToStuckLines 1 . lines $ contents
-      fnLines   = tail $ collectFunctionBlocks fileLines []
-      functions = collectFunctions fnLines []
-  print functions
+  let outFilename = reverse $ drop 6 $ reverse filename
+      fileLines   = filter (\x -> lineContents x /= []) . linesToStuckLines 1 . lines $ contents
+      fnLines     = tail $ collectFunctionBlocks fileLines []
+      functions   = collectFunctions fnLines empty
+      
+  writeFile outFilename $ show functions
+  hClose handle

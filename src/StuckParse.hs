@@ -33,6 +33,8 @@ data Function =
            , fArgs :: [String]
            , fBody :: [Instruction] } deriving (Show, Eq)
 
+type FMAP = Map.Map String [String]
+
 {- Misc -}
 
 -- init with first arg  = []
@@ -105,40 +107,43 @@ genPop line args
 genCond :: StuckLine -> [String] -> Instruction
 genCond line args = COND $ Maybe.fromJust $ elemIndex (head (lineContents line)) args
 
-genCall :: StuckLine -> [String] -> [String] -> Instruction
-genCall line args funcs
-  | not $ name `elem` funcs       = error $ pLine ++ ": unknown function " ++ name
+genCall :: StuckLine -> FMAP -> String -> Instruction
+genCall line m func
+  | not $ Map.member func m       = error $ pLine ++ ": unknown function " ++ func
   | length argExprs < length args = error $ pLine ++ ": insufficient arguments " ++ suppl
   | length argExprs > length args = error $ pLine ++ ": too many arguments "     ++ suppl
   | not argsValid = error $ pLine ++ ": function arguments contain unknown parameters"
-  | otherwise     = CALL { callFuncName = name, callArguments = map parse argExprs }
+  | otherwise     = CALL { callFuncName = func, callArguments = map parse argExprs }
   where pLine     = "Line " ++ (show . lineNumber) line
-        name      = head  $ lineContents line
+        args      = Maybe.fromJust $ Map.lookup func m
         argExprs  = tail  $ lineContents line
         argsValid = not   $ False `elem` [stringsInArgs args $ getStrings s "" | s <- argExprs]
         suppl     = "supplied to function" -- only way to make the line length reasonable
 
-generateInstructions :: [StuckLine] -> [String] -> [String] -> Int -> [Instruction]
+generateInstructions :: [StuckLine] -> FMAP -> Int -> String -> [Instruction]
 generateInstructions [] _ _ _ = []
-generateInstructions (l : lines) args fncs p
-  | lineIndent l < p                    = END : generateInstructions lines args fncs (lineIndent l)
-  | (head . lineContents) l == ">"      = genPush l args      : next
-  | (head . lineContents) l == "<"      = genPop  l args      : next
-  | (head . lineContents) l `elem` args = genCond l args      : next
-  | (head . lineContents) l `elem` fncs = genCall l args fncs : next
-  | lineContents l == ["?"]             = INPUT               : next
-  | lineContents l == ["!"]             = OUTPUT              : next
-  | otherwise    = error $ "Line " ++ show (lineNumber l) ++ ": unrecognised syntax"
-  where next     = generateInstructions lines args fncs $ lineIndent l
+generateInstructions (l : lines) map prevIndent currName
+  | lineIndent l < prevIndent = END : generateInstructions (l : lines) map (lineIndent l) currName
+  | firstWord == ">"          = genPush l args : next
+  | firstWord == "<"          = genPop  l args : next
+  | firstWord `elem` args     = genCond l args : next
+  | Map.member firstWord map  = call           : next
+  | lineContents l == ["?"]   = INPUT          : next
+  | lineContents l == ["!"]   = OUTPUT         : next
+  | otherwise     = error $ "Line " ++ show (lineNumber l) ++ ": unrecognised syntax"
+  where firstWord = (head . lineContents) l
+        args      = Maybe.fromJust $ Map.lookup currName map
+        call      = genCall l map firstWord
+        next      = generateInstructions lines map (lineIndent l) currName
 
 -- Init with funcs = []
-collectFunctions :: [[StuckLine]] -> [String] -> [Function]
+collectFunctions :: [[StuckLine]] -> FMAP -> [Function]
 collectFunctions [] _ = []
-collectFunctions (f : fns) funcs =
+collectFunctions (f : fns) map =
   Function { fName = name, fArgs = args, fBody = body } : next
   where firstLine  = head f
-        name = head . lineContents $ firstLine
-        args = tail . lineContents $ firstLine
-        body = generateInstructions (tail f) args (name : funcs) 0
-        next = collectFunctions fns (name : funcs)
-
+        name       = head . lineContents $ firstLine
+        args       = tail . lineContents $ firstLine
+        newMap     = Map.insert name args map
+        body       = generateInstructions (tail f) newMap 0 name
+        next       = collectFunctions fns newMap
