@@ -138,7 +138,7 @@ generateInstructions (l : lines) map prevIndent currName
 
 -- Init with funcs = []
 collectFunctions :: [[StuckLine]] -> FMAP -> [Function]
-collectFunctions [] _ = []
+collectFunctions [] _          = []
 collectFunctions (f : fns) map =
   Function { fName = name, fArgs = args, fBody = body } : next
   where firstLine  = head f
