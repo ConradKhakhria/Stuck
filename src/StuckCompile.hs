@@ -67,4 +67,7 @@ compileInstruction (COND i) l _ = condL1 ++ condL2
         condL2 = "jng .JMP_" ++ show l ++ "\n"
 
 compileInstruction (CALL { callFuncName = fname, callArguments = args }) l as =
-  concat [compileMaths a as l | a <- args] ++ "call func_" ++ fname ++ "\n" 
+  callL1 ++ callL2 ++ callL3
+  where callL1 = concat [compileMaths a as l | a <- reverse args]
+        callL2 = "call func_" ++ fname
+        callL3 = "add esi, "  ++ show (4 * length args) 
