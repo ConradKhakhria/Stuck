@@ -9,11 +9,17 @@ import Parsing
 
 data CompileState =
   State { cName     ::  String
+        , cArgStrs  :: [String]
         , cArgCount ::  Int
         , cJmpStack :: [Int]
-        , cJmpCount ::  Int }
+        , cJmpCount ::  Int
+        , cLineNo   ::  Int }
 
 {- Compiles parse trees -}
+
+-- Gets the offset in the stack of an argument
+argumentOffset :: Int -> String
+argumentOffset n = show (4 * (n + 1))
 
 compileMaths :: ParseTree -> [String] -> Integer -> String
 compileMaths (NUM n) args lineNumber
@@ -39,3 +45,26 @@ compileMaths (NODE {pOperation = op, pElems = elems}) args lineNumber =
                       "*" -> "mul ebx\n"
                       "/" -> "xor edx, edx\ndiv ebx"
                       "^" -> error "Exponents not yet implemented"
+
+compileInstruction :: Instruction -> Integer -> [String] -> String
+compileInstruction (PUSH i) _ _ = pushL1 ++ pushL2 ++ pushL3
+  where pushL1 = "mov edx, [ebp+" ++ argumentOffset i ++ "]\n"
+        pushL2 = "mov   [STACK + ecx], edx"
+        pushL3 = "add ecx, 4"
+
+compileInstruction (POP i)  _ _ = popL1 ++ popL2
+  where popL1  = "mov [ebp+" ++ argumentOffset i ++ "], [STACK + ecx]\n"
+        popL2  = "sub ecx, 4"
+        
+compileInstruction (END)    l _ = ".JMP_" ++ show l ++ ":\n"
+
+compileInstruction (INPUT)  _ _ = "call user_input"
+
+compileInstruction (OUTPUT) _ _ = "call user_output"
+
+compileInstruction (COND i) l _ = condL1 ++ condL2
+  where condL1 = "cmp [ebp+" ++ argumentOffset i ++ "], 0\n"
+        condL2 = "jng .JMP_" ++ show l ++ "\n"
+
+compileInstruction (CALL { callFuncName = fname, callArguments = args }) l as =
+  concat [compileMaths a as l | a <- args] ++ "call func_" ++ fname ++ "\n" 
