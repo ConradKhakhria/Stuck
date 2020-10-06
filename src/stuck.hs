@@ -4,6 +4,8 @@ import Control.Monad
 import Data.List
 
 import StuckParse
+import StuckCompile
+import Parsing
 
 {- IO stuff -}
 
