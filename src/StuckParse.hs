@@ -35,6 +35,14 @@ data Function =
 
 type FMAP = Map.Map String [String]
 
+isEnd  :: Instruction -> Bool
+isEnd  (END) = True
+isEnd _      = False
+
+isCond :: Instruction -> Bool
+isCond (COND _) = True
+isCond _        = False
+
 {- Misc -}
 
 -- init with first arg  = []
