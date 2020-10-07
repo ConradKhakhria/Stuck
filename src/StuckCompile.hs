@@ -46,6 +46,10 @@ compileMaths (NODE {pOperation = op, pElems = elems}) args lineNum =
 
 {- Compile Instructions -}
 
+compileEnd :: Int -> String
+compileEnd 0 = "" -- Stupid workaround
+compileEnd n = ".JMP_" ++ show n ++ ":\n"
+
 compilePush :: Instruction -> String
 compilePush (PUSH i _) = pushL1 ++ pushL2 ++ pushL3
   where pushL1 = "mov edx, [ebp+" ++ argOffset i ++ "]\n"
@@ -74,7 +78,7 @@ compileCall (CALL name as lineNo) args =
 compileInstructions :: [Instruction] -> FMAP -> CompileState -> String
 compileInstructions [] _ _ = ""
 compileInstructions (i : is) m state
-  | isEnd    i = ".JMP_" ++ show n ++ ":\n" ++ next eState
+  | isEnd    i = compileEnd n               ++ next eState
   | isInput  i = "call user_input\n"        ++ next state
   | isOutput i = "call user_output\n"       ++ next state
   | isPush   i = compilePush i              ++ next state
