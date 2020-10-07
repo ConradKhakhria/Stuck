@@ -36,13 +36,29 @@ data Function =
 
 type FMAP = Map.Map String [String]
 
-isEnd  :: Instruction -> Bool
-isEnd  (END _)     = True
-isEnd _            = False
+{- Confirm what the Instruction is -}
 
-isCond :: Instruction -> Bool
-isCond (COND _ _ ) = True
-isCond _           = False
+isEnd  (END _)      = True
+isEnd _             = False
+
+isInput (INPUT _)   = True
+isInput _           = False
+
+isOutput (OUTPUT _) = True
+isOutput _          = False
+
+isPush (PUSH _ _)   = True
+isPush _            = False
+
+isPop (POP _ _)     = True
+isPop _             = False
+
+isCond (COND _ _ )  = True
+isCond _            = False
+
+isCall (CALL _ _ _) = True
+isCall _            = False
+
 
 {- Misc -}
 
