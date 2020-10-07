@@ -182,5 +182,8 @@ collectFunctions (f : fns) map =
         name       = head firstLine
         args       = tail firstLine
         newMap     = Map.insert name args map
-        body       = generateInstructions (tail f) newMap 0 name
+        bodyBlock  = tail f
+        (i1, i2)   = (lineIndent (head bodyBlock), lineIndent (last bodyBlock))
+        ends       = [ END (lineNumber (last bodyBlock)) | _ <- [1..(i2 `div` i1)] ]
+        body       = generateInstructions bodyBlock newMap 0 name ++ ends
 

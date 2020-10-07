@@ -1,8 +1,9 @@
+import qualified Data.Map as Map
 import System.Environment
 import System.IO
 import Control.Monad
 import Data.List
-import Data.Map (empty, fromList)
+import Data.Maybe (fromJust)
 
 import StuckParse
 import StuckCompile
@@ -25,7 +26,10 @@ main = do
   let outFilename = reverse $ drop 6 $ reverse filename
       fileLines   = filter (\x -> lineContents x /= []) . linesToStuckLines 1 . lines $ contents
       fnLines     = tail $ collectFunctionBlocks fileLines []
-      functions   = collectFunctions fnLines empty
---      argMap      = fromList [ (fName f, fArgs f) | f <- functions ]
-  writeFile outFilename $ show functions
+      functions   = collectFunctions fnLines Map.empty
+      argMap      = Map.fromList [ (fName f, fArgs f) | f <- functions ]
+      lFuncName   = fName $ last functions
+      lArgOffset  = show  $ 4 * (length (fromJust (Map.lookup lFuncName argMap)))
+      compiled    = boilerplate1 ++ compileFunctions functions argMap ++ boilerplate2 lFuncName lArgOffset
+  writeFile (outFilename ++ ".s") compiled
   hClose handle
