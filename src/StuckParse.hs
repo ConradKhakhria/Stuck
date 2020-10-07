@@ -16,17 +16,18 @@ import Parsing
 data StuckLine =
   StuckLine { lineIndent   :: Int
             , lineContents :: [String]
-            , lineNumber   :: Integer } deriving (Show, Eq)
+            , lineNumber   :: Int } deriving (Show, Eq)
 
 data Instruction 
-  = END
-  | INPUT
-  | OUTPUT
-  | PUSH Int
-  | POP  Int
-  | COND Int
-  | CALL { callFuncName  :: String
-         , callArguments :: [ParseTree] } deriving (Show, Eq)
+  = END      Int
+  | INPUT    Int
+  | OUTPUT   Int
+  | PUSH Int Int
+  | POP  Int Int
+  | COND Int Int
+  | CALL { cFuncName :: String
+         , cArgs     :: [ParseTree]
+         , cLineNo   :: Int } deriving (Show, Eq)
 
 data Function = 
   Function { fName :: String
@@ -36,12 +37,12 @@ data Function =
 type FMAP = Map.Map String [String]
 
 isEnd  :: Instruction -> Bool
-isEnd  (END) = True
-isEnd _      = False
+isEnd  (END _)     = True
+isEnd _            = False
 
 isCond :: Instruction -> Bool
-isCond (COND _) = True
-isCond _        = False
+isCond (COND _ _ ) = True
+isCond _           = False
 
 {- Misc -}
 
@@ -71,17 +72,17 @@ removeComment []        = []
 removeComment ('#' : _) = []
 removeComment (s : str) = s : removeComment str
 
-processLine :: String -> Integer -> StuckLine
+processLine :: String -> Int -> StuckLine
 processLine line n =
   StuckLine { lineIndent = indent, lineContents = words pLine, lineNumber = n }
   where (indent, rLine)  = indentTuple line 0
         pLine = removeComment rLine
 
-linesToStuckLines :: Integer -> [String] -> [StuckLine]
+linesToStuckLines :: Int -> [String] -> [StuckLine]
 linesToStuckLines _ [] = []
 linesToStuckLines n (l : ls) = processLine l n : linesToStuckLines (succ n) ls
 
-{- Here is where each Stuckline is converted to a Function record -}
+{- Here is where each StuckLine is converted to a function record -}
 
 -- Init with curr = []
 collectFunctionBlocks :: [StuckLine] -> [StuckLine] -> [[StuckLine]]
@@ -97,9 +98,10 @@ genPush line args
   | lineLen < 2 = error $ pLine ++ ": no arguments supplied to push operation"
   | lineLen > 2 = error $ pLine ++ ": too many arguments supplied to push operation"
   | not $ pushArg `elem` args = error $ pLine ++ ": unknown argument" ++ pushArg
-  | otherwise   = PUSH  $ Maybe.fromJust $ elemIndex pushArg args
+  | otherwise   = PUSH (Maybe.fromJust (elemIndex pushArg args)) lineNo
   where lineLen = length . lineContents $ line
-        pLine   = "Line " ++ (show . lineNumber) line
+        lineNo  = lineNumber line
+        pLine   = "Line " ++ show lineNo
         pushArg = (lineContents line) !! 1
 
 genPop :: StuckLine -> [String] -> Instruction
@@ -107,51 +109,62 @@ genPop line args
   | lineLen < 2 = error $ pLine ++ ": no arguments supplied to pop operation"
   | lineLen > 2 = error $ pLine ++ ": too many arguments supplied to pop operation"
   | not $ popArg `elem` args = error $ pLine ++ ": unknown argument" ++ popArg
-  | otherwise   = POP   $ Maybe.fromJust $ elemIndex popArg args
+  | otherwise   = POP (Maybe.fromJust (elemIndex popArg args)) lineNo
   where lineLen = length . lineContents $ line
-        pLine   = "Line " ++ (show . lineNumber) line
+        lineNo  = lineNumber line
+        pLine   = "Line " ++ show lineNo
         popArg  = (lineContents line) !! 1
 
 genCond :: StuckLine -> [String] -> Instruction
-genCond line args = COND $ Maybe.fromJust $ elemIndex (head (lineContents line)) args
+genCond line args
+  | lineLen /= 1     = error $ pLine ++ ": multiple symbols found in conditional operation"
+  | otherwise        = COND condArgIndex lineNo
+  where condArgument = head . lineContents $ line
+        lineLen      = length . lineContents $ line
+        lineNo       = lineNumber line
+        pLine        = "Line " ++ show lineNo
+        condArgIndex = Maybe.fromJust $ elemIndex condArgument args
 
-genCall :: StuckLine -> FMAP -> String -> Instruction
-genCall line m func
-  | not $ Map.member func m       = error $ pLine ++ ": unknown function " ++ func
-  | length argExprs < length args = error $ pLine ++ ": insufficient arguments " ++ suppl
-  | length argExprs > length args = error $ pLine ++ ": too many arguments "     ++ suppl
-  | not argsValid = error $ pLine ++ ": function arguments contain unknown parameters"
-  | otherwise     = CALL { callFuncName = func, callArguments = map parse argExprs }
-  where pLine     = "Line " ++ (show . lineNumber) line
-        args      = Maybe.fromJust $ Map.lookup func m
-        argExprs  = tail  $ lineContents line
-        argsValid = not   $ False `elem` [stringsInArgs args $ getStrings s "" | s <- argExprs]
-        suppl     = "supplied to function" -- only way to make the line length reasonable
+genCall :: StuckLine -> [String] -> Instruction
+genCall line args
+  | length argExprs  < length args = error $ pLine ++ ": not enough arguments" ++ suppl
+  | length argExprs  > length args = error $ pLine ++ ": too many arguments"   ++ suppl
+  | not argsValid    = error $ pLine ++ ": function arguments contain unknown parameters"
+  | otherwise        = CALL { cFuncName = func, cArgs = map parse argExprs, cLineNo = lineNo }
+  where lineNo       = lineNumber line
+        pLine        = "Line " ++ show lineNo
+        func         = head $ lineContents line
+        argExprs     = tail $ lineContents line
+        argsValid    = not  $ False `elem` [stringsInArgs args $ getStrings s "" | s <- argExprs]
+        suppl        = "supplied to function" -- only way to make the line length reasonable
 
+-- currName is the name of the function these instructions are in
 generateInstructions :: [StuckLine] -> FMAP -> Int -> String -> [Instruction]
 generateInstructions [] _ _ _ = []
-generateInstructions (l : lines) map prevIndent currName
-  | lineIndent l < prevIndent = END : generateInstructions (l : lines) map (lineIndent l) currName
-  | firstWord == ">"          = genPush l args : next
-  | firstWord == "<"          = genPop  l args : next
-  | firstWord `elem` args     = genCond l args : next
-  | Map.member firstWord map  = call           : next
-  | lineContents l == ["?"]   = INPUT          : next
-  | lineContents l == ["!"]   = OUTPUT         : next
-  | otherwise     = error $ "Line " ++ show (lineNumber l) ++ ": unrecognised syntax"
-  where firstWord = (head . lineContents) l
-        args      = Maybe.fromJust $ Map.lookup currName map
-        call      = genCall l map firstWord
+generateInstructions (l : lines) map pIndent currName
+  | lineIndent l < pIndent    = END lineNo         : endNext
+  | firstWord == ">"          = genPush l currArgs : next
+  | firstWord == "<"          = genPop  l currArgs : next
+  | firstWord `elem` currArgs = genCond l currArgs : next
+  | Map.member firstWord map  = genCall l callArgs : next
+  | lineContents l == ["?"]   = INPUT  lineNo      : next
+  | lineContents l == ["!"]   = OUTPUT lineNo      : next
+  | otherwise     = error $ pLine ++ ": unrecognised syntax"
+  where firstWord = head . lineContents $ l
+        currArgs  = Maybe.fromJust $ Map.lookup currName map
+        callArgs  = Maybe.fromJust $ Map.lookup firstWord map
+        lineNo    = lineNumber l
+        pLine     = "Line " ++ show lineNo
+        endNext   = generateInstructions (l : lines) map (lineIndent l) currName
         next      = generateInstructions lines map (lineIndent l) currName
 
--- Init with funcs = []
 collectFunctions :: [[StuckLine]] -> FMAP -> [Function]
 collectFunctions [] _          = []
 collectFunctions (f : fns) map =
-  Function { fName = name, fArgs = args, fBody = body } : next
-  where firstLine  = head f
-        name       = head . lineContents $ firstLine
-        args       = tail . lineContents $ firstLine
+  Function { fName = name, fArgs = args, fBody = body } : collectFunctions fns newMap
+  where firstLine  = lineContents $ head f
+        name       = head firstLine
+        args       = tail firstLine
         newMap     = Map.insert name args map
         body       = generateInstructions (tail f) newMap 0 name
-        next       = collectFunctions fns newMap
+
