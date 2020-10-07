@@ -2,7 +2,7 @@ import System.Environment
 import System.IO
 import Control.Monad
 import Data.List
-import Data.Map (empty)
+import Data.Map (empty, fromList)
 
 import StuckParse
 import StuckCompile
@@ -26,6 +26,6 @@ main = do
       fileLines   = filter (\x -> lineContents x /= []) . linesToStuckLines 1 . lines $ contents
       fnLines     = tail $ collectFunctionBlocks fileLines []
       functions   = collectFunctions fnLines empty
-      
+--      argMap      = fromList [ (fName f, fArgs f) | f <- functions ]
   writeFile outFilename $ show functions
   hClose handle
