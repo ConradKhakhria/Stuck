@@ -95,7 +95,6 @@ implemented in Stuck, and there are some well-commented examples in the 'example
 make the syntax and functionality of Stuck easier to understand.
 
 ## Current status
-So far, the parsing process has been fully implemented and tested, but the translation of parse
-trees to actual assembly isn't complete yet. Currently, the plan is just to support 32-bit x86
-assembly, but this might change in the future.
+The language compiles fully to 32-bit ELF x86 although with segmentation faults occuring in some
+cases during function return. More reserach is needed...
 
