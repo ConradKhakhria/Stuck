@@ -47,7 +47,7 @@ compileMaths (NODE {pOperation = op, pElems = elems}) args lineNum =
 {- Compile Instructions -}
 
 compileEnd :: Int -> String
-compileEnd 0 = "" -- Stupid workaround
+compileEnd 0 = "" -- Doesn't print label zero (which only occured at the end of the function)
 compileEnd n = ".JMP_" ++ show n ++ ":\n"
 
 compilePush :: Instruction -> String
@@ -157,8 +157,3 @@ boilerplate2 lFuncName argcOffset = "\
 \mov   eax, 1                   \n\
 \mov   ebx, 0                   \n\
 \int   0x80                     \n"
-
-
--- \mov   esp, ebp                 \n\
--- \pop   ebp                      \n\
--- \ret                            \n"
