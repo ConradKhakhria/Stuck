@@ -1,6 +1,5 @@
-# This program prints the n-th fibonacci number where n is a number
-# provided by the user.
-
+# This program prints the first n fibonacci numbers (where n is
+# provided by the user)
 
 # Function which pushes its only arguments onto the stack
 # This sort of function is used whenever you want to push a
@@ -8,22 +7,39 @@
 a b
   > b
 
-# The main fibonacci iterator, which stores term n-1 and n-2
-# in c and d, and then counts down from e
+# Recursive fibonacci iterator
+# c is the number of iterations left, d and e are empty arguments
 b c d e
-  e
-    < c
+  c
     < d
-    > c
-    > d
-    a c+d
-    b c d e-1
+    < e
+
+    a e
+    a d
+    a d+e
+
+    b c-1 d e
+
+# print loop
+# d is the number of calculated fibonacci values, e is empty
+c d e
+  d
+    < e
+    c d-1 0
+    > e
+    !
 
 # Main function
-c d
+e f g
   ?
-  < d
-  a 0
+  < f # Store the number of fibonacci values to calculate
+
+  a f-2
+  < f # As otherwise we miss the first values
+
   a 1
-  b 0 0 d
-  !
+  a 1
+
+  b f 0 0 # calculate the fibonacci numbers
+
+  c f+2 0
