@@ -122,6 +122,7 @@ boilerplate1 = "\
 \                                               \n\
 \void uoutput()                                 \n\
 \{                                              \n\
+\    printf(\"=> \");                           \n\
 \    printf(\"%ld\\n\", STACK[STACK_INDEX - 1]);\n\
 \}\n"
 
