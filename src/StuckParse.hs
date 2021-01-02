@@ -19,12 +19,12 @@ data StuckLine =
             , lineNumber   :: Int } deriving (Show, Eq)
 
 data Instruction 
-  = END      Int
-  | INPUT    Int
-  | OUTPUT   Int
-  | PUSH Int Int
-  | POP  Int Int
-  | COND Int Int
+  = END         Int
+  | INPUT       Int
+  | OUTPUT      Int
+  | PUSH String Int
+  | POP  String Int
+  | COND String Int
   | CALL { cFuncName :: String
          , cArgs     :: [ParseTree]
          , cLineNo   :: Int } deriving (Show, Eq)
@@ -56,8 +56,8 @@ isPop _             = False
 isCond (COND _ _ )  = True
 isCond _            = False
 
-isCall (CALL _ _ _) = True
-isCall _            = False
+isCall CALL {} = True
+isCall _       = False
 
 
 {- Misc -}
@@ -114,7 +114,7 @@ genPush line args
   | lineLen < 2 = error $ pLine ++ ": no arguments supplied to push operation"
   | lineLen > 2 = error $ pLine ++ ": too many arguments supplied to push operation"
   | not $ pushArg `elem` args = error $ pLine ++ ": unknown argument" ++ pushArg
-  | otherwise   = PUSH (Maybe.fromJust (elemIndex pushArg args)) lineNo
+  | otherwise   = PUSH pushArg lineNo
   where lineLen = length . lineContents $ line
         lineNo  = lineNumber line
         pLine   = "Line " ++ show lineNo
@@ -125,7 +125,7 @@ genPop line args
   | lineLen < 2 = error $ pLine ++ ": no arguments supplied to pop operation"
   | lineLen > 2 = error $ pLine ++ ": too many arguments supplied to pop operation"
   | not $ popArg `elem` args = error $ pLine ++ ": unknown argument" ++ popArg
-  | otherwise   = POP (Maybe.fromJust (elemIndex popArg args)) lineNo
+  | otherwise   = POP popArg lineNo
   where lineLen = length . lineContents $ line
         lineNo  = lineNumber line
         pLine   = "Line " ++ show lineNo
@@ -134,7 +134,7 @@ genPop line args
 genCond :: StuckLine -> [String] -> Instruction
 genCond line args
   | lineLen /= 1     = error $ pLine ++ ": multiple symbols found in conditional operation"
-  | otherwise        = COND condArgIndex lineNo
+  | otherwise        = COND condArgument lineNo
   where condArgument = head . lineContents $ line
         lineLen      = length . lineContents $ line
         lineNo       = lineNumber line
@@ -145,13 +145,13 @@ genCall :: StuckLine -> [String] -> Instruction
 genCall line args
   | length argExprs  < length args = error $ pLine ++ ": not enough arguments" ++ suppl
   | length argExprs  > length args = error $ pLine ++ ": too many arguments"   ++ suppl
-  | not argsValid    = error $ pLine ++ ": function arguments contain unknown parameters"
+--  | not argsValid    = error $ pLine ++ show args
   | otherwise        = CALL { cFuncName = func, cArgs = map parse argExprs, cLineNo = lineNo }
   where lineNo       = lineNumber line
         pLine        = "Line " ++ show lineNo
         func         = head $ lineContents line
         argExprs     = tail $ lineContents line
-        argsValid    = not  $ False `elem` [stringsInArgs args $ getStrings s "" | s <- argExprs]
+        argsValid    = False `notElem` [stringsInArgs args $ getStrings s "" | s <- argExprs]
         suppl        = "supplied to function" -- only way to make the line length reasonable
 
 -- currName is the name of the function these instructions are in
