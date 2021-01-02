@@ -1,0 +1,48 @@
+# This program takes in 2 numbers m and n from user input
+# and calculates the Ackermann function value A(m, n)
+
+a b
+  > b
+
+# Recursive Ackermann function A(c, d)
+# c and d are the parameters, e and f are junk args
+# When the function terminates, the result is pushed onto the stack
+b c d e f
+  a c*d
+  < e   # e == 0 if c == 0 or d == 0
+
+  a 1
+  < f # f is 1 for the conditional
+
+  # c, d != 0 : A(c, d) =  A(c - 1, A(c, d - 1))
+  e
+    b c d-1 0 0
+    < d
+    b c-1 d 0 0
+
+    a 0
+    a 0
+    < c
+    < d # So the other branches don't execute
+
+  # A(0, d) = d + 1
+  d
+    a d+1
+
+    a 0
+    < c
+
+  # A(c, 0) = A(c - 1, 1)
+  c
+    b c-1 1 0 0
+
+c d e
+  ?
+  < d # Arg 1
+
+  ?
+  < e # Arg 2
+
+  b d e 0 0
+
+  !
