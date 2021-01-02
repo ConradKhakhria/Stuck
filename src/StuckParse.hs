@@ -113,23 +113,23 @@ genPush :: StuckLine -> [String] -> Instruction
 genPush line args
   | lineLen < 2 = error $ pLine ++ ": no arguments supplied to push operation"
   | lineLen > 2 = error $ pLine ++ ": too many arguments supplied to push operation"
-  | not $ pushArg `elem` args = error $ pLine ++ ": unknown argument" ++ pushArg
+  | pushArg `notElem` args = error $ pLine ++ ": unknown argument" ++ pushArg
   | otherwise   = PUSH pushArg lineNo
   where lineLen = length . lineContents $ line
         lineNo  = lineNumber line
         pLine   = "Line " ++ show lineNo
-        pushArg = (lineContents line) !! 1
+        pushArg = lineContents line !! 1
 
 genPop :: StuckLine -> [String] -> Instruction
 genPop line args
   | lineLen < 2 = error $ pLine ++ ": no arguments supplied to pop operation"
   | lineLen > 2 = error $ pLine ++ ": too many arguments supplied to pop operation"
-  | not $ popArg `elem` args = error $ pLine ++ ": unknown argument" ++ popArg
+  | popArg `notElem` args = error $ pLine ++ ": unknown argument" ++ popArg
   | otherwise   = POP popArg lineNo
   where lineLen = length . lineContents $ line
         lineNo  = lineNumber line
         pLine   = "Line " ++ show lineNo
-        popArg  = (lineContents line) !! 1
+        popArg  = lineContents line !! 1
 
 genCond :: StuckLine -> [String] -> Instruction
 genCond line args
