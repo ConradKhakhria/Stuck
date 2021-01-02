@@ -3,5 +3,6 @@
 *.s
 *.c
 test/
+examples/*.bin
 src/Parsing.hs
 stuck
