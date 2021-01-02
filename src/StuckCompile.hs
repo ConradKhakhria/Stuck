@@ -19,31 +19,6 @@ argOffset n = show $ 4 * (n + 1)
 
 {- Compiles ParseTrees -}
 
---compileMaths :: ParseTree -> [String] -> Int -> String
---compileMaths (NUM n) args lineNum
---  | '.' `elem` n  = error $ pLine ++ ": floating point numbers not supported"
---  | not64bits     = error $ pLine ++ ": numbers must be 32 bits"
---  | otherwise     = "push "  ++ n ++ "\n"
---  where pLine     = "Line " ++ show lineNum ++ "\n"
---        not32bits = abs (read n :: Integer) > 0x8000000000000000
---
---compileMaths (SYM a) args lineNum = "push dword [ebp + " ++ show argOffset ++ "]\n"
---  where argIndex  = fromJust $ elemIndex a args
---        argOffset = 4 * argIndex + 4
---
---compileMaths (NODE {pOperation = op, pElems = elems}) args lineNum =
---  pushElems ++ "mov eax, [esp]\n" ++ combine ++ cleanup
---  where pushElems = concat $ reverse [compileMaths e args lineNum | e <- elems]
---        movEBX    = [ "mov ebx, [esp+" ++ show (i*4) ++ "]\n" | i <- [1..(length args)] ]
---        combine   = concat [mov ++ opInst | mov <- movEBX]
---        cleanup   = "add esp, " ++ show (4 * (length args - 1)) ++ "\nmov [esp], eax\n"
---        opInst    = case op of
---                      "+" -> "add eax, ebx\n"
---                      "-" -> "sub eax, ebx\n"
---                      "*" -> "mul ebx\n"
---                      "/" -> "xor edx, edx\ndiv ebx"
---                      "^" -> error "Exponents not yet implemented"
-
 compileMaths :: ParseTree -> [String] -> Int -> String
 compileMaths (NUM n) args lineNum
   | '.' `elem` n = error $ pLine ++ ": floating point numbers not supported"
@@ -75,13 +50,6 @@ compilePop (POP a _) = a ++ " = STACK[--STACK_INDEX];\n"
 compileCond :: Instruction -> CompileState -> String
 compileCond (COND a _) state = "if (" ++ a ++ " > 0) {\n"
 
--- compileCall :: Instruction -> [String] -> String
--- compileCall (CALL name as lineNo) args =
---   callL1 ++ callL2 ++ callL3
---   where callL1 = concat [ compileMaths a args lineNo | a <- as ]
---         callL2 = "call func_" ++ name ++ "\n"
---         callL3 = "add esi, "  ++ show (4 * length args) ++ "\n"
-
 compileCall :: Instruction -> [String] -> String
 compileCall (CALL name as lineNo) args =
   "func_" ++ name ++ "(" ++ intercalate ", " [ compileMaths a args lineNo | a <- as ] ++ ");\n"
@@ -109,10 +77,10 @@ compileFunctions (f : fs) m =
   n ++ as ++ ") {\n" ++ compileInstructions (fBody f) m state ++ compileFunctions fs m
   where n     = "void func_" ++ fName f ++ "("
         as    = "int64_t " ++ intercalate ", int64_t " (fArgs f)
-        state = (CompileState { sFuncName = fName f
-                              , sFuncArgs = fArgs f
-                              , sJmpStack = []
-                              , sJmpCount = 1 })
+        state = CompileState { sFuncName = fName f
+                             , sFuncArgs = fArgs f
+                             , sJmpStack = []
+                             , sJmpCount = 1 }
 
 boilerplate1 :: String
 boilerplate1 = "\
