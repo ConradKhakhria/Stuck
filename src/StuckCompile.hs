@@ -126,7 +126,6 @@ boilerplate1 = "\
 \    printf(\"%ld\\n\", STACK[STACK_INDEX - 1]);\n\
 \}\n"
 
-
 boilerplate2 :: String -> Int -> String
 boilerplate2 lastFuncName argCount =
   let
