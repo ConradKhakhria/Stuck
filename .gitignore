@@ -1,3 +1,7 @@
 *.hi
 *.o
+*.s
+*.c
 test/
+src/Parsing.hs
+stuck
