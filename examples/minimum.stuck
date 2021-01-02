@@ -1,0 +1,60 @@
+# This program gets the lowest number from a list of inputs
+# first, input the number of values to be compared and then
+# the values themselves
+# e.g:
+#
+# > minimum
+# 4
+# 12
+# 31
+# 3
+# 7
+# => 3
+
+a b
+  > b
+
+# This function pushes the smallest of c and d onto the stack
+# e and f are empty variables
+b c d e f
+  a 1
+  < f   # Setting f to 1 for the conditional
+
+  a c-d
+  < e
+  e
+    > d
+    a 0
+    < f
+  f
+    > c
+
+# Recursive loop to find the smallest value
+# e and f are empty variables
+c d e f
+  a d-1
+  < d
+
+  d
+    < e
+    < f
+    b e f 0 0
+
+    c d 0 0
+
+# Pushes 'e' input values onto the stack
+d e
+  e
+    ?
+    d e-1
+
+# Main function
+e f
+  ?
+  < f # Get the number of values to compare
+
+  d f # Get the values
+
+  c f 0 0 # Compare the values
+
+  ! # Print the lowest
