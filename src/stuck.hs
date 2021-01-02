@@ -33,7 +33,7 @@ main = do
       lFuncName   = fName $ last functions
       argCount    = length (fromJust (Map.lookup lFuncName argMap))
       compiled    = boilerplate1 ++ compileFunctions functions argMap ++ boilerplate2 lFuncName argCount
-      gccCommand  = "gcc " ++ outFilename ++ ".c -o " ++ outFilename
+      gccCommand  = "gcc " ++ outFilename ++ ".c -o " ++ outFilename ++ ".bin"
       cFileRemove = "rm " ++ outFilename ++ ".c"
 
   writeFile (outFilename ++ ".c") compiled
