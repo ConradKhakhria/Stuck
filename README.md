@@ -95,6 +95,9 @@ implemented in Stuck, and there are some well-commented examples in the 'example
 make the syntax and functionality of Stuck easier to understand.
 
 ## Current status
+### main branch
 The language compiles fully to 32-bit ELF x86 although with segmentation faults occuring in some
 cases during function return. More reserach is needed...
+### c_transpile branch
+The language transpiles fully to C with no known issues.
 
